@@ -1,5 +1,11 @@
 # Changes
 
+## 1.0.5 / 2012-12-18
+
+  - Change implementation detail of [reducible][], such that no exceptions
+    are thrown, since exceptions makes debugging a lot harder when
+    "pause on exceptions" is enabled.
+
 ## 1.0.1 / 2012-11-23
 
   - Add test for [reducible][] tests.
