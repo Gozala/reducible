@@ -27,61 +27,55 @@ reduce.define(Reducible, function reduceReducible(reducible, next, initial) {
   var result
   // State is intentionally accumulated in the outer variable, that way no
   // matter if consumer is broken and passes in wrong accumulated state back
-  // this reducible will still behave as intended.
+  // this reducible will still accumulate result as intended.
   var state = initial
   try {
     reducible.reduce(function forward(value) {
       try {
-        // If reduce reduction has already being completed just return
-        // `result` that is last state boxed in `reduced`. That way anything
-        // trying to dispatch after it's closed or error-ed will just be handed
-        // a `reduced` `state` indicating last value and no intent of getting
-        // more values.
-        if (result) return result
+        // If reduction has already being completed return is set to
+        // an accumulated state boxed via `reduced`. It's set to state
+        // that is return to signal input that reduction is complete.
+        if (result) state = result
+        // if dispatched `value` is is special `end` of input one or an error
+        // just forward to reducer and store last state boxed as `reduced` into
+        // state. Later it will be assigned to result and returned to input
+        // to indicate end of reduction.
+        else if (value === end || isError(value)) {
+          next(value, state)
+          state = reduced(state)
+        }
+        // if non of above just accumulate new state by passing value and
+        // previously accumulate state to reducer.
+        else state = next(value, state)
 
-        // If value is an `error` (that also includes `end` of stream) we just
-        // throw and let `catch` block do the rest of the job.
-        if (value === end || isError(value)) throw value
+        // If state is boxed with `reduced` then accumulation is complete.
+        // Indicated explicitly by a reducer or by end / error of the input.
+        // Either way store it to the result in case broken input attempts to
+        // call forward again.
+        if (isReduced(state)) result = state
 
-        // Otherwise new `state` is accumulated `by` forwarding a `value` to an
-        // actual `next` handler.
-        state = next(value, state)
-
-        // If new `state` is boxed in `reduced` than source should be stopped
-        // and no more values should be forwarded to a `next` handler. To do
-        // that we throw `end` and let `catch` block do the rest of the job.
-        if (isReduced(state)) throw end
-
-        // If code got that far then nothing special happened and `new` state is
-        // just returned back, to a consumer.
+        // return accumulated state back either way.
         return state
       }
-      // If `error` is thrown that may few things:
-      //
-      //  1. Last value dispatched was indicator of an error (that also includes
-      //     `end` of stream).
-      //  2. Provided `next` handler threw an exception causing stream failure.
-      //
-      // When this happens stream is either finished or error-ed, either way
-      // no new items should get through. There for last `state` is boxed with
-      // `reduced` and store as a `result` of this accumulation. Any subsequent
-      // attempts of providing values will just get it in return, hopefully
-      // causing source of value to get closed.
+      // If error is thrown then forward it to the reducer such that consumer
+      // can apply recovery logic. Also store current `state` boxed with
+      // `reduced` to signal input that reduction is complete.
       catch (error) {
-        if (isReduced(state)) {
-          result = state
-          state = result.value
-        } else {
-          result = reduced(state)
-        }
-        // Maybe we should console.error exceptions if such arise when calling
-        // `next` in the following line.
         next(error, state)
+        result = reduced(state)
         return result
       }
-    }, null)
-  } catch(error) {
+    })
+  }
+  // It could be that attempt to reduce underlaying reducible throws, if that
+  // is the case still forward an `error` to a reducer and store reduced state
+  // into result, in case process of reduction started before exception and
+  // forward will still be called. Return result either way to signal
+  // completion.
+  catch(error) {
     next(error, state)
+    result = reduced(state)
+    return result
   }
 })
 
