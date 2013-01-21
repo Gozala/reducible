@@ -112,38 +112,6 @@ exports["test reduce error"] = function(assert) {
   assert.deepEqual(actual, [boom], "error is errored collection")
 }
 
-exports["test thrown errors"] = function (assert) {
-  var called = 0
-
-  var toArray = function (source, callback) {
-    reduce(source, function (value, buffer) {
-      called++
-      assert.ok(!(value instanceof Error), "value is not an Error")
-      if (value === end) {
-        callback(null, buffer)
-      } else {
-        buffer.push(value)
-      }
-
-      return buffer
-    }, [])
-  }
-
-  toArray([1,2,3], function (err, result) {
-    assert.equal(err, null, "err is null")
-    assert.deepEqual(result, [1, 2, 3], "result is array")
-  })
-
-  assert.equal(called, 4)
-
-  assert.throws(function () {
-    toArray([1,2,3], function (err, result) {
-      throw new Error("Some Error")
-    })
-  }, /Some Error/, "Some Error is thrown")
-
-  assert.equal(called, 5)
-}
 
 if (require.main === module)
   require("test").run(exports)
