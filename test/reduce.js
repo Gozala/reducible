@@ -112,5 +112,6 @@ exports["test reduce error"] = function(assert) {
   assert.deepEqual(actual, [boom], "error is errored collection")
 }
 
+
 if (require.main === module)
   require("test").run(exports)
