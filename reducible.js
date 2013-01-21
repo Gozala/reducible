@@ -6,6 +6,9 @@ var isError = require("./is-error")
 var isReduced = require("./is-reduced")
 var reduced = require("./reduced")
 
+var WARN_ENDED = "Source attempted to send item after it ended"
+var WARN_REDUCED = "Source attempted to send item after it was reduced / closed"
+
 function Reducible(reduce) {
   /**
   Reducible is a type of the data-structure that represents something
@@ -24,59 +27,7 @@ function Reducible(reduce) {
 // Implementation of `accumulate` for reducible, which just delegates to it's
 // `reduce` attribute.
 reduce.define(Reducible, function reduceReducible(reducible, next, initial) {
-  var result
-  // State is intentionally accumulated in the outer variable, that way no
-  // matter if consumer is broken and passes in wrong accumulated state back
-  // this reducible will still accumulate result as intended.
-  var state = initial
-  try {
-    reducible.reduce(function forward(value) {
-      try {
-        // If reduction has already being completed return is set to
-        // an accumulated state boxed via `reduced`. It's set to state
-        // that is return to signal input that reduction is complete.
-        if (result) state = result
-        // if dispatched `value` is is special `end` of input one or an error
-        // just forward to reducer and store last state boxed as `reduced` into
-        // state. Later it will be assigned to result and returned to input
-        // to indicate end of reduction.
-        else if (value === end || isError(value)) {
-          next(value, state)
-          state = reduced(state)
-        }
-        // if non of above just accumulate new state by passing value and
-        // previously accumulate state to reducer.
-        else state = next(value, state)
-
-        // If state is boxed with `reduced` then accumulation is complete.
-        // Indicated explicitly by a reducer or by end / error of the input.
-        // Either way store it to the result in case broken input attempts to
-        // call forward again.
-        if (isReduced(state)) result = state
-
-        // return accumulated state back either way.
-        return state
-      }
-      // If error is thrown then forward it to the reducer such that consumer
-      // can apply recovery logic. Also store current `state` boxed with
-      // `reduced` to signal input that reduction is complete.
-      catch (error) {
-        next(error, state)
-        result = reduced(state)
-        return result
-      }
-    })
-  }
-  // It could be that attempt to reduce underlaying reducible throws, if that
-  // is the case still forward an `error` to a reducer and store reduced state
-  // into result, in case process of reduction started before exception and
-  // forward will still be called. Return result either way to signal
-  // completion.
-  catch(error) {
-    next(error, state)
-    result = reduced(state)
-    return result
-  }
+  reducible.reduce(next, initial)
 })
 
 function reducible(reduce) {

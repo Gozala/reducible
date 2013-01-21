@@ -1,7 +1,7 @@
 {
   "name": "reducible",
   "id": "reducible",
-  "version": "1.0.5",
+  "version": "2.0.0-alpha",
   "description": "High-order abstraction for reducible data structures",
   "keywords": [
     "reducers",
