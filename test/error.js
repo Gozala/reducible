@@ -12,6 +12,10 @@ exports["test thrown errors with arrays"] = function (assert) {
 
   var toArray = function (source, callback) {
     reduce(source, function (value, buffer) {
+      if (isError(value)) {
+        return callback(value)
+      }
+
       called++
       assert.ok(!(value instanceof Error), "value is not an Error")
       if (value === end) {
@@ -33,15 +37,26 @@ exports["test thrown errors with arrays"] = function (assert) {
   assert.equal(called, 4, "toArray is called 4 times")
   assert.equal(callbackCalled, 1, "callback is called once")
 
+  var first = false
+
   assert.throws(function () {
     toArray([1,2,3], function (err, result) {
       callbackCalled++
+      if (first === false) {
+        first = true
+        assert.equal(err, null)
+        assert.deepEqual(result, [1, 2, 3])
+      } else {
+        assert.equal(err.message, "Some Error")
+      }
+
       throw new Error("Some Error")
     })
   }, /Some Error/, "Some Error is thrown")
 
+  assert.equal(first, true, "toArray callback went through both paths")
   assert.equal(called, 8, "toArray is called 8 times")
-  assert.equal(callbackCalled, 2, "callback is called twice")
+  assert.equal(callbackCalled, 3, "callback is called twice")
 }
 
 exports["test thrown errors with reducible"] = function (assert) {
@@ -86,21 +101,16 @@ exports["test thrown errors with reducible"] = function (assert) {
   assert.equal(callbackCalled, 1, "callback is called once")
 
   var first = false
-  var second = false
 
   assert.throws(function () {
     toArray(list([1,2,3]), function (err, result) {
-      if (first) {
-        first = false
-        second = true
-
-        assert.equal(err.message, "Some Error", "first error is passed back to me")
-      } else if (second) {
-
-        assert.equal(err.message, "Some Error", "second error is passed back to me")
-        second = "finished"
-      } else {
+      if (first === false) {
         first = true
+
+        assert.equal(err, null)
+        assert.deepEqual(result, [1, 2, 3])
+      } else {
+        assert.equal(err.message, "Some Error", "first error is passed back to me")
       }
 
       callbackCalled++
@@ -108,10 +118,9 @@ exports["test thrown errors with reducible"] = function (assert) {
     })
   }, /Some Error/, "Some Error get's thrown the third time")
 
-  assert.equal(first, false, "first was handled")
-  assert.equal(second, "finished", "second was handled")
+  assert.equal(first, true, "first was handled")
   assert.equal(called, 8, "toArray is called 8 times")
-  assert.equal(callbackCalled, 4, "callback is called four times")
+  assert.equal(callbackCalled, 3, "callback is called four times")
 }
 
 if (require.main === module)
