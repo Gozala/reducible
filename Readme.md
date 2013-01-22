@@ -2,6 +2,10 @@
 
 [![Build Status](https://secure.travis-ci.org/Gozala/reducible.png)](http://travis-ci.org/Gozala/reducible)
 
+
+[![Browser support](http://ci.testling.com/Gozala/reducible.png)](http://ci.testling.com/Gozala/reducible)
+
+
 Library defines higher-order abstraction for reducible data structures -
 collections based upon [reduce][].
 

@@ -210,6 +210,3 @@ exports["test data after reduced then error"] = warnings(function(assert) {
     warnings.ended, input, boom
   ], "data send after close logs warnings")
 })
-
-if (require.main === module)
-  require("test").run(exports)
