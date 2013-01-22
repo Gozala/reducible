@@ -122,6 +122,3 @@ exports["test thrown errors with reducible"] = function (assert) {
   assert.equal(called, 8, "toArray is called 8 times")
   assert.equal(callbackCalled, 3, "callback is called four times")
 }
-
-if (require.main === module)
-  require("test").run(exports)
