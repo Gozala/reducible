@@ -11,6 +11,8 @@ var WARN_ENDED = "Source attempted to send item after it ended"
 var WARN_REDUCED = "Source attempted to send item after it was reduced / closed"
 
 var internalReduce = method("reduce")
+var fallbackReduce = method()
+fallbackReduce.toString = function() { return "reducible@reduce" }
 
 function reduce(reducible, next, initial) {
   var isEnded = false
@@ -35,8 +37,13 @@ function reduce(reducible, next, initial) {
         // also set to `true` to mark it ended.
         else if (value === end || isError(value)) {
           isEnded = true
-          result = reduced(state)
-          state = next(value, state)
+          if (isInterrupted) {
+            next(end, result.value)
+          } else {
+            result = reduced(state)
+            state = next(value, state)
+          }
+          return result
         }
         // If `reducible` was interrupted by reducer via `reduced(result)`
         // return value it's not supposed to send any more data, instead it
@@ -53,6 +60,7 @@ function reduce(reducible, next, initial) {
         // If it's non of the above cases, just accumulate new state by passing
         // `value` and previous `state` down the flow.
         else {
+          result = state
           state = next(value, state)
 
           // If accumulated `state` is boxed with `reduced` then accumulation
@@ -63,6 +71,8 @@ function reduce(reducible, next, initial) {
           if (isReduced(state)) {
             isInterrupted = true
             result = state
+          } else {
+            result = void(0)
           }
         }
 
@@ -75,6 +85,8 @@ function reduce(reducible, next, initial) {
       // last `state` boxed in `reduced` is saved as a result. Note that
       // `result` is also returned back to `reducible` in order to interrupt it.
       catch (error) {
+        if (error === value) throw error
+
         isEnded = true
         result = reduced(state)
         next(error)
@@ -103,8 +115,14 @@ function reduce(reducible, next, initial) {
 // defining new reducibles and for performing actual reduce.
 reduce.method = internalReduce
 reduce.toString = internalReduce.toString
-reduce.define = internalReduce.define
-reduce.implement = internalReduce.implement
+reduce.define = function(Type, implementation) {
+  internalReduce.define(Type, implementation)
+  fallbackReduce.define(Type, implementation)
+}
+reduce.implement = function(instance, implementation) {
+  internalReduce.implement(instance, implementation)
+  fallbackReduce.implement(instance, implementation)
+}
 
 // Implementation of `reduce` for the empty collections, that immediately
 // signals reducer that it's ended.
@@ -132,7 +150,7 @@ reduce.indexed = function reduceIndexed(indexed, next, initial) {
     index = index + 1
     if (value === end) return end
     if (isError(value)) return state
-    if (isReduced(state)) return state.value
+    if (isReduced(state)) return next(end, state.value)
   }
   next(end, state)
 }
@@ -150,9 +168,20 @@ reduce.define(Arguments, reduce.indexed)
 
 // All other built-in data types are treated as single value collections
 // by default. Of course individual types may choose to override that.
-reduce.define(reduce.singular)
+reduce.define(Object, reduce.singular)
+reduce.define(String, reduce.singular)
+reduce.define(Number, reduce.singular)
 
 // Errors just yield that error.
 reduce.define(Error, function(error, next) { next(error) })
+
+internalReduce.define(function(input, next, initial) {
+  if (!global.supressReducerWarnings) {
+    console.warn("Looks like you wind up with two copies of reducers." + 
+                 "It would be best to put `npm dedup` into your application " +
+                 "package.json but doing nothing may also work fine.")
+  }
+  return fallbackReduce(input, next, initial)
+})
 
 module.exports = reduce

@@ -22,7 +22,8 @@ exports["test reduced early"] = function(assert) {
     return reduced("nope")
   }, 0)
 
-  assert.deepEqual(actual, [1, 0], "early reduce value is accumulated")
+  assert.deepEqual(actual, [1, 0, end, "nope"],
+                   "early reduce value is accumulated")
 }
 
 exports["test reduce errored"] = function(assert) {
@@ -38,12 +39,12 @@ exports["test reduce errored"] = function(assert) {
 exports["test reduce late error"] = function(assert) {
   var actual = []
   var boom = Error("Boom!")
-  var result = reduce([1, 2, boom, 4], function(value) {
-    actual.push(value)
+  var result = reduce([1, 2, boom, 4], function(value, result) {
+    actual.push(result, value)
     return reduced("Wheuh")
   }, 0)
 
-  assert.deepEqual(actual, [1], "late errors are irrelevant")
+  assert.deepEqual(actual, [0, 1, "Wheuh", end], "late errors are irrelevant")
 }
 
 exports["test reduce null"] = function(assert) {
