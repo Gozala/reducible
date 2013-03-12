@@ -6,7 +6,7 @@ var isReduced = require("./is-reduced")
 var isError = require("./is-error")
 var end = require("./end")
 
-var reduce = method("reduce")
+var reduce = method("reduce@reducible")
 
 // Implementation of `reduce` for the empty collections, that immediately
 // signals reducer that it's ended.
