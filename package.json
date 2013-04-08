@@ -1,7 +1,7 @@
 {
   "name": "reducible",
   "id": "reducible",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "High-order abstraction for reducible data structures",
   "keywords": [
     "reducers",
@@ -29,12 +29,10 @@
   },
   "devDependencies": {
     "test": "~0.x.0",
-    "phantomify": "~0.x.0",
-    "repl-utils": "~1.0.0"
+    "phantomify": "~0.x.0"
   },
   "main": "./reducible.js",
   "scripts": {
-    "repl": "node node_modules/repl-utils",
     "test": "npm run test-node && npm run test-browser",
     "test-browser": "node ./node_modules/phantomify/bin/cmd.js ./test/index.js",
     "test-node": "node ./test/index.js"
@@ -46,6 +44,6 @@
     }
   ],
   "dependencies": {
-    "method": "~1.0.1"
+    "method": "~2.0.x"
   }
 }
