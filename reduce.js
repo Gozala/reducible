@@ -1,16 +1,5 @@
 "use strict";
 
-var globalScope = typeof window !== "undefined" ?
-  window : typeof global !== "undefined" ?
-  global : {}
-
-if (globalScope["__gozala/reducibe__is__defined"]) {
-  console.warn("There are two copies of reducible/reduce. This will most " +
-    "likely cause problems. You should npm dedup")
-} else {
-  globalScope["__gozala/reducibe__is__defined"] = true
-}
-
 var method = require("method")
 
 var isReduced = require("./is-reduced")
