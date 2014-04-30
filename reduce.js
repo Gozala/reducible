@@ -97,6 +97,7 @@ function reduce(reducible, next, initial) {
     isEnded = true
     result = reduced(initial)
     next(error)
+    return result
   }
 }
 // Transplant method internals to the `reduce` so that it can be used for both
